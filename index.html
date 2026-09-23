@@ -1198,15 +1198,6 @@ Tool</pre></figure></section>
     lead.parentNode.insertBefore(wrap, lead.nextSibling);
   }
 
-  // section anchor affordance
-  $$(".sec").forEach(function (s) {
-    var head = $(".sec-head", s); if (!head || $(".sec-anchor", head)) return;
-    var a = doc.createElement("a");
-    a.className = "sec-anchor"; a.href = "#" + s.id; a.textContent = "#";
-    a.setAttribute("aria-label", "Link to this section");
-    head.appendChild(a);
-  });
-
   // copy buttons on code figures
   $$("figure.code").forEach(function (fig) {
     var cap = $("figcaption", fig), pre = $("pre", fig);
@@ -1386,6 +1377,9 @@ Tool</pre></figure></section>
       return $$(".sec-head h2, p, .sub, .bul li, .ord li, .chk li, .note-h, .note-b, figure.dia figcaption, figure.dia pre", sec)
         .filter(function (n) { return n.textContent.trim().length > 1; });
     }
+    // the intro/hero, read first when playback starts from the top
+    var heroEls = $$(".hero-eyebrow, .hero h1, .hero-lead, .hero-stat, .hero-stack .stk, .hero-stack .stk-boundary, .hero-hint")
+      .filter(function (n) { return n.textContent.trim().length > 1; });
     function hasAlnum(w) { return /[A-Za-z0-9]/.test(w); }
     function speakTokens(s) { return (s.trim().match(/\S+/g) || []).filter(hasAlnum); }
     function countWords(list) { var c = 0; list.forEach(function (n) { c += speakTokens(n.textContent).length; }); return c; }
@@ -1504,12 +1498,14 @@ Tool</pre></figure></section>
       if (player.hasAttribute("hidden")) { player.removeAttribute("hidden"); openTab.classList.remove("show"); }
       var sec = secList[si]; sec.classList.add("in");
       nodes = readableNodes(sec);
+      if (si === 0 && !nodeEl) nodes = heroEls.concat(nodes);   // read the intro first
       ni = nodeEl ? Math.max(0, nodes.indexOf(nodeEl)) : 0;
       wordsTotal = countWords(nodes); wordsDone = 0;
       for (var j = 0; j < ni; j++) wordsDone += speakTokens(nodes[j].textContent).length;
       setBar();
       elLabel.innerHTML = labelFor(sec); markReadingNav(sec);
-      (nodeEl || sec).scrollIntoView({ block: nodeEl ? "center" : "start", behavior: reduce ? "auto" : "smooth" });
+      var target = nodeEl || (si === 0 ? ($(".hero") || sec) : sec);
+      target.scrollIntoView({ block: nodeEl ? "center" : "start", behavior: reduce ? "auto" : "smooth" });
       var s = si; setTimeout(function () { if (reading && si === s) speakNode(); }, 70);
     }
     function jump(delta) { startReadingAt((reading ? si : indexOfActive()) + delta); }
