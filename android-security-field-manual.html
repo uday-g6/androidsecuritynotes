@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>(function(){try{var t=localStorage.getItem("asfm-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Android Security &amp; Ethical Hacking &mdash; Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================= TOKENS */
+:root{
+  --f-display:"Space Grotesk",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  /* light base */
+  --bg:#EDF1F6; --bg2:#E1E8F1; --panel:#FFFFFF; --panel2:#F3F6FA;
+  --line:#D6DEE9; --line2:#E5EBF2;
+  --text:#16212E; --muted:#4E5E72; --faint:#7887a0;
+  --amber:#B4740E; --amber-soft:rgba(180,116,14,.10);
+  --teal:#0C8E7f; --teal-soft:rgba(12,142,127,.10);
+  --coral:#CF4B4B; --coral-soft:rgba(207,75,75,.09);
+  --shadow:rgba(20,40,70,.10); --ring:rgba(180,116,14,.35);
+
+  /* terminal palette: fixed dark in BOTH themes (deliberate) */
+  --term-bg:#0C1522; --term-bg2:#0F1B2B; --term-line:#22374F;
+  --term-text:#CFE0F0; --term-dim:#8098b1;
+  --term-amber:#F2B45A; --term-teal:#57DAC8; --term-coral:#F2857f;
+
+  --side-w:304px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1621; --bg2:#0A111A; --panel:#14202E; --panel2:#1A2838;
+    --line:#27384D; --line2:#1E2C3D;
+    --text:#DBE6F1; --muted:#95A8C0; --faint:#6a7e97;
+    --amber:#F2A93C; --amber-soft:rgba(242,169,60,.13);
+    --teal:#3FD0BD; --teal-soft:rgba(63,208,189,.12);
+    --coral:#F27272; --coral-soft:rgba(242,114,114,.12);
+    --shadow:rgba(0,0,0,.38); --ring:rgba(242,169,60,.40);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1621; --bg2:#0A111A; --panel:#14202E; --panel2:#1A2838;
+  --line:#27384D; --line2:#1E2C3D;
+  --text:#DBE6F1; --muted:#95A8C0; --faint:#6a7e97;
+  --amber:#F2A93C; --amber-soft:rgba(242,169,60,.13);
+  --teal:#3FD0BD; --teal-soft:rgba(63,208,189,.12);
+  --coral:#F27272; --coral-soft:rgba(242,114,114,.12);
+  --shadow:rgba(0,0,0,.38); --ring:rgba(242,169,60,.40);
+}
+
+/* ============================================================= RESET */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 26px);-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--f-body);font-size:16.5px;line-height:1.68;
+  font-feature-settings:"kern","liga";-webkit-font-smoothing:antialiased;
+  padding-top:env(safe-area-inset-top,0px);
+}
+::selection{background:var(--amber);color:#0b1119}
+a{color:inherit;text-decoration:none}
+
+/* subtle blueprint grid on the page background */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(var(--line2) 1px,transparent 1px),linear-gradient(90deg,var(--line2) 1px,transparent 1px);
+  background-size:52px 52px;mask-image:radial-gradient(120% 80% at 70% 0%,#000 0%,transparent 72%);
+}
+
+/* ============================================================= PROGRESS */
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:60;background:transparent}
+.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),var(--teal));box-shadow:0 0 12px var(--ring)}
+
+/* ============================================================= SIDEBAR */
+.side{
+  position:fixed;top:0;left:0;bottom:0;width:var(--side-w);z-index:50;
+  background:var(--panel);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);
+}
+.side-top{padding:20px 18px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;gap:11px;align-items:center}
+.brand-mark{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;
+  background:var(--panel2);border:1px solid var(--line)}
+.brand-txt{display:flex;flex-direction:column;line-height:1.2}
+.brand-1{font-family:var(--f-display);font-weight:700;font-size:16px;letter-spacing:-.01em}
+.brand-2{font-size:11px;color:var(--muted);letter-spacing:.02em;margin-top:2px}
+
+.side-tools{display:flex;gap:9px;margin-top:15px}
+.search{flex:1;display:flex;align-items:center;gap:8px;padding:0 11px;height:38px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--faint)}
+.search:focus-within{border-color:var(--amber);color:var(--amber);box-shadow:0 0 0 3px var(--amber-soft)}
+.search input{flex:1;border:0;background:transparent;color:var(--text);font-family:var(--f-body);font-size:13.5px;outline:none;min-width:0}
+.search input::placeholder{color:var(--faint)}
+.theme-btn{width:38px;height:38px;flex:none;display:grid;place-items:center;cursor:pointer;
+  background:var(--panel2);border:1px solid var(--line);border-radius:9px;color:var(--muted)}
+.theme-btn:hover{color:var(--amber);border-color:var(--amber)}
+.i-moon{display:none}
+:root[data-theme="dark"] .i-sun{display:none}
+:root[data-theme="dark"] .i-moon{display:block}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .i-sun{display:none}:root:not([data-theme="light"]) .i-moon{display:block}}
+
+/* nav */
+.nav{flex:1;overflow-y:auto;padding:12px 10px 40px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.nav::-webkit-scrollbar{width:9px}
+.nav::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px;border:2px solid var(--panel)}
+.nav-root{list-style:none;margin:0;padding:0}
+.nav-part{margin:2px 0 6px}
+.nav-part-a{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:8px;cursor:pointer}
+.nav-part-a:hover{background:var(--panel2)}
+.nav-part-a .np{font-family:var(--f-mono);font-size:11px;font-weight:600;color:var(--amber);
+  background:var(--amber-soft);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);
+  padding:2px 6px;border-radius:5px;letter-spacing:.02em}
+.nav-part-a .nt{font-family:var(--f-display);font-weight:600;font-size:13.5px;letter-spacing:-.01em}
+.nav-part.on .nt{color:var(--amber)}
+.nav-sub{list-style:none;margin:0 0 4px;padding:0 0 0 6px;
+  border-left:1px solid var(--line);margin-left:16px}
+.nav-a{display:flex;gap:9px;align-items:baseline;padding:5px 9px;border-radius:7px;color:var(--muted);position:relative}
+.nav-a:hover{background:var(--panel2);color:var(--text)}
+.nav-a .ns{font-family:var(--f-mono);font-size:10.5px;color:var(--faint);min-width:20px}
+.nav-a .nx{font-size:13px;line-height:1.35}
+.nav-a.active{color:var(--text)}
+.nav-a.active .ns{color:var(--teal)}
+.nav-a.active::before{content:"";position:absolute;left:-7px;top:50%;transform:translateY(-50%);
+  width:3px;height:16px;border-radius:3px;background:var(--teal);box-shadow:0 0 8px var(--teal-soft)}
+.nav-part.hide,.nav-a.hide{display:none}
+.no-hits{display:none;color:var(--faint);font-size:13px;padding:16px 12px;font-style:italic}
+.no-hits.show{display:block}
+
+/* ============================================================= MOBILE CHROME */
+.menu-btn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:55;
+  width:42px;height:42px;display:none;place-items:center;cursor:pointer;color:var(--text);
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 20px var(--shadow)}
+.scrim{position:fixed;inset:0;z-index:45;background:rgba(4,9,16,.55);opacity:0;visibility:hidden;transition:opacity .25s}
+.scrim.show{opacity:1;visibility:visible}
+
+/* ============================================================= MAIN */
+.main{margin-left:var(--side-w);min-height:100vh}
+.hero,.content,.foot{max-width:900px;margin-inline:auto;padding-inline:clamp(20px,5vw,64px)}
+
+/* ---- hero ---- */
+.hero{padding-top:clamp(56px,9vh,104px);padding-bottom:26px}
+.hero-eyebrow{font-family:var(--f-mono);font-size:12px;color:var(--teal);letter-spacing:.04em;margin-bottom:20px}
+.hero h1{font-family:var(--f-display);font-weight:700;letter-spacing:-.03em;line-height:1.02;
+  font-size:clamp(38px,7.2vw,74px);margin:0 0 22px}
+.hero-lead{font-size:clamp(16px,2.4vw,19.5px);color:var(--muted);max-width:60ch;margin:0 0 40px}
+
+/* layered stack */
+.hero-stack{display:flex;flex-direction:column;gap:7px;margin:0 0 18px;
+  border:1px solid var(--line);border-radius:16px;padding:16px;background:
+  linear-gradient(180deg,color-mix(in srgb,var(--panel) 70%,transparent),transparent);
+  position:relative;overflow:hidden}
+.stk{position:relative;display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;
+  border:1px solid var(--line);background:var(--panel);overflow:hidden}
+.stk-i{font-family:var(--f-mono);font-size:12px;font-weight:600;color:var(--amber);
+  background:var(--amber-soft);border:1px solid color-mix(in srgb,var(--amber) 32%,transparent);
+  border-radius:6px;padding:3px 7px;flex:none}
+.stk-name{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:-.01em}
+.stk-sub{font-family:var(--f-mono);font-size:11.5px;color:var(--faint);margin-left:auto;text-align:right}
+.stk.untrusted{border-style:dashed;border-color:color-mix(in srgb,var(--coral) 55%,var(--line));
+  background:var(--coral-soft)}
+.stk.untrusted .stk-name{color:var(--coral)}
+.stk-tag{font-family:var(--f-mono);font-size:11px;font-weight:600;color:var(--coral);
+  border:1px solid color-mix(in srgb,var(--coral) 45%,transparent);border-radius:6px;padding:3px 7px;
+  text-transform:uppercase;letter-spacing:.08em;flex:none}
+.stk.hw{background:linear-gradient(90deg,var(--teal-soft),transparent);
+  border-color:color-mix(in srgb,var(--teal) 40%,var(--line))}
+.stk.hw .stk-name{color:var(--teal)}
+.stk-boundary{display:flex;align-items:center;justify-content:center;height:26px;position:relative;margin:1px 0}
+.stk-boundary::before{content:"";position:absolute;left:8px;right:8px;top:50%;height:0;
+  border-top:1.5px dashed color-mix(in srgb,var(--amber) 60%,transparent)}
+.stk-boundary span{position:relative;z-index:1;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--amber);background:var(--bg);padding:0 12px}
+.hero-hint{font-size:14px;color:var(--muted)}
+.hero-hint em{color:var(--text);font-style:italic}
+
+/* ============================================================= PART DIVIDER */
+.part{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;
+  margin:64px 0 10px;padding-top:30px;border-top:1px solid var(--line)}
+.part:first-of-type{margin-top:20px;border-top:0;padding-top:0}
+.part-rail{display:grid;place-items:center}
+.part-n{font-family:var(--f-display);font-weight:700;font-size:clamp(40px,7vw,62px);
+  line-height:.9;letter-spacing:-.04em;color:transparent;-webkit-text-stroke:1.4px var(--amber);
+  text-stroke:1.4px var(--amber)}
+.part-txt h2{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,3.4vw,29px);
+  letter-spacing:-.02em;margin:0 0 4px}
+.part-txt p{margin:0;color:var(--muted);font-size:15px;max-width:56ch}
+
+/* ============================================================= SECTION */
+.content{padding-bottom:40px}
+.sec{padding:26px 0;border-bottom:1px solid var(--line2);scroll-margin-top:80px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.sec-n{font-family:var(--f-mono);font-weight:600;font-size:13px;color:var(--teal);flex:none;
+  padding-top:3px}
+.sec h2{font-family:var(--f-display);font-weight:600;font-size:clamp(20px,2.9vw,25px);
+  letter-spacing:-.018em;line-height:1.2;margin:0}
+.sec p{margin:12px 0;max-width:68ch}
+.sec .sub{font-family:var(--f-display);font-weight:600;font-size:16px;letter-spacing:-.01em;
+  color:var(--text);margin:20px 0 4px}
+.sec .sub::before{content:"";display:inline-block;width:14px;height:1.5px;background:var(--amber);
+  vertical-align:middle;margin-right:9px;transform:translateY(-3px)}
+
+/* inline code */
+code{font-family:var(--f-mono);font-size:.86em;background:var(--amber-soft);
+  color:var(--amber);padding:1.5px 6px;border-radius:5px;
+  border:1px solid color-mix(in srgb,var(--amber) 22%,transparent);white-space:nowrap}
+
+/* lists */
+.bul,.ord,.chk{margin:12px 0;padding:0;max-width:68ch}
+.bul{list-style:none}
+.bul li{position:relative;padding:4px 0 4px 24px}
+.bul li::before{content:"";position:absolute;left:3px;top:13px;width:7px;height:7px;
+  border:1.5px solid var(--teal);border-radius:2px;transform:rotate(45deg)}
+.ord{list-style:none;counter-reset:o}
+.ord li{position:relative;padding:5px 0 5px 40px;counter-increment:o}
+.ord li::before{content:counter(o,decimal-leading-zero);position:absolute;left:0;top:5px;
+  font-family:var(--f-mono);font-size:11.5px;font-weight:600;color:var(--amber);
+  background:var(--amber-soft);border:1px solid color-mix(in srgb,var(--amber) 26%,transparent);
+  border-radius:5px;padding:2px 6px;line-height:1.2}
+.chk{list-style:none}
+.chk li{position:relative;padding:5px 0 5px 30px;font-family:var(--f-body)}
+.chk .box{position:absolute;left:0;top:8px;width:15px;height:15px;border-radius:4px;
+  border:1.6px solid var(--faint)}
+.chk li:hover .box{border-color:var(--teal)}
+
+/* ---- code / diagram figures (fixed terminal palette) ---- */
+figure.code,figure.dia{margin:18px 0;border-radius:11px;overflow:hidden;
+  border:1px solid var(--term-line);background:var(--term-bg);box-shadow:0 10px 30px var(--shadow)}
+figure.code figcaption,figure.dia figcaption{display:flex;align-items:center;gap:9px;
+  font-family:var(--f-mono);font-size:11.5px;letter-spacing:.03em;padding:9px 14px;
+  border-bottom:1px solid var(--term-line);color:var(--term-dim);background:var(--term-bg2)}
+figure.code figcaption{color:var(--term-teal)}
+figure.dia figcaption{color:var(--term-amber)}
+figure.code .glyph{font-weight:600;color:var(--term-teal)}
+figure.dia figcaption::before{content:"";width:8px;height:8px;border:1.5px solid var(--term-amber);
+  border-radius:2px;flex:none}
+figure pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--f-mono);
+  font-size:12.8px;line-height:1.62;color:var(--term-text);
+  scrollbar-width:thin;scrollbar-color:var(--term-line) transparent}
+figure.dia pre{color:color-mix(in srgb,var(--term-text) 92%,var(--term-amber))}
+figure pre::-webkit-scrollbar{height:9px}
+figure pre::-webkit-scrollbar-thumb{background:var(--term-line);border-radius:9px}
+
+/* ---- callouts ---- */
+.note{margin:18px 0;border-radius:11px;padding:15px 17px 15px 18px;
+  border:1px solid var(--line);border-left-width:3px;background:var(--panel2)}
+.note-h{font-family:var(--f-display);font-weight:600;font-size:14.5px;letter-spacing:-.01em;
+  margin-bottom:4px;display:flex;align-items:center;gap:9px}
+.note-h::before{font-family:var(--f-mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px}
+.note-b{font-size:14.5px;color:var(--muted);max-width:66ch}
+.note.rule{border-left-color:var(--amber);background:var(--amber-soft)}
+.note.rule .note-h::before{content:"RULE";color:var(--amber);background:color-mix(in srgb,var(--amber) 16%,transparent)}
+.note.warn{border-left-color:var(--coral);background:var(--coral-soft)}
+.note.warn .note-h::before{content:"WARN";color:var(--coral);background:color-mix(in srgb,var(--coral) 15%,transparent)}
+.note.key{border-left-color:var(--teal);background:var(--teal-soft)}
+.note.key .note-h::before{content:"KEY";color:var(--teal);background:color-mix(in srgb,var(--teal) 15%,transparent)}
+.note.info{border-left-color:var(--faint)}
+.note.info .note-h::before{content:"NOTE";color:var(--muted);background:var(--panel)}
+
+/* ============================================================= FOOTER */
+.foot{padding:44px 0 80px;text-align:center}
+.foot-line{height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin-bottom:26px}
+.foot p{margin:6px 0;font-family:var(--f-display);font-weight:600;letter-spacing:-.01em}
+.foot-sub{font-family:var(--f-body)!important;font-weight:400!important;color:var(--faint);font-size:13px;max-width:56ch;margin-inline:auto}
+
+/* ============================================================= TO-TOP */
+.totop{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);z-index:40;
+  width:44px;height:44px;display:grid;place-items:center;color:var(--text);
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;box-shadow:0 8px 24px var(--shadow);
+  opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .25s,transform .25s}
+.totop:hover{color:var(--amber);border-color:var(--amber)}
+.totop.show{opacity:1;visibility:visible;transform:none}
+
+/* ============================================================= RESPONSIVE */
+@media (max-width:960px){
+  :root{--side-w:288px}
+  .side{transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 0 40px rgba(0,0,0,.4)}
+  .side.open{transform:none}
+  .main{margin-left:0}
+  .menu-btn{display:grid}
+  .hero{padding-top:76px}
+}
+@media (prefers-reduced-motion:reduce){.side{transition:none}.totop{transition:none}}
+@media (max-width:560px){
+  body{font-size:16px}
+  .stk-sub{display:none}
+  .stk{padding:11px 13px;gap:10px}
+  .part{gap:14px}
+  .hero-stack{padding:11px}
+}
+
+/* ============================================================= PRINT */
+@media print{
+  body::before,.side,.menu-btn,.scrim,.progress,.totop,.theme-btn,.search{display:none!important}
+  .main{margin:0}
+  .hero-stack,figure.code,figure.dia,.note{break-inside:avoid}
+  .sec{break-inside:avoid}
+  figure.code,figure.dia{box-shadow:none}
+}
+
+</style>
+</head>
+<body>
+<div class="progress" id="progress"><span id="progress-bar"></span></div>
+
+<button class="menu-btn" id="menu-btn" aria-label="Open contents">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+</button>
+
+<div class="scrim" id="scrim"></div>
+
+<aside class="side" id="side">
+  <div class="side-top">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="26" height="26" fill="none">
+          <path d="M16 2.5 27 8v9c0 6.6-4.6 10.9-11 12.9C9.6 27.9 5 23.6 5 17V8z" stroke="var(--amber)" stroke-width="1.7" stroke-linejoin="round"/>
+          <path d="M16 10v12M10.5 13.5h11M10.5 18.5h11" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="brand-txt">
+        <span class="brand-1">Android Security</span>
+        <span class="brand-2">Ethical Hacking &mdash; Field Manual</span>
+      </div>
+    </div>
+    <div class="side-tools">
+      <div class="search">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+        <input id="search" type="text" placeholder="Filter 94 topics&hellip;" autocomplete="off" spellcheck="false">
+      </div>
+      <button class="theme-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">
+        <svg class="i-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" stroke-linecap="round"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.3 6.3 0 0 0 10.5 10.5z" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav class="nav" id="nav">
+    <ul class="nav-root"><li class="nav-part" data-part="00"><a class="nav-part-a" href="#part-00"><span class="np">00</span><span class="nt">Ground Rules</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s0" data-target="s0"><span class="ns">00</span><span class="nx">The rule before you start</span></a></li></ul></li><li class="nav-part" data-part="01"><a class="nav-part-a" href="#part-01"><span class="np">01</span><span class="nt">Foundations</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s1" data-target="s1"><span class="ns">01</span><span class="nx">What is Android?</span></a></li><li><a class="nav-a" href="#s2" data-target="s2"><span class="ns">02</span><span class="nx">Android Open Source Project (AOSP)</span></a></li><li><a class="nav-a" href="#s3" data-target="s3"><span class="ns">03</span><span class="nx">The architecture in detail: the Linux kernel</span></a></li><li><a class="nav-a" href="#s4" data-target="s4"><span class="ns">04</span><span class="nx">Hardware Abstraction Layer (HAL)</span></a></li><li><a class="nav-a" href="#s5" data-target="s5"><span class="ns">05</span><span class="nx">The Android Runtime (ART)</span></a></li></ul></li><li class="nav-part" data-part="02"><a class="nav-part-a" href="#part-02"><span class="np">02</span><span class="nt">Application Anatomy</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s6" data-target="s6"><span class="ns">06</span><span class="nx">The APK — Android Application Package</span></a></li><li><a class="nav-a" href="#s7" data-target="s7"><span class="ns">07</span><span class="nx">AndroidManifest.xml</span></a></li><li><a class="nav-a" href="#s8" data-target="s8"><span class="ns">08</span><span class="nx">Components: Activity and Service</span></a></li><li><a class="nav-a" href="#s9" data-target="s9"><span class="ns">09</span><span class="nx">Broadcast Receiver</span></a></li><li><a class="nav-a" href="#s10" data-target="s10"><span class="ns">10</span><span class="nx">Content Provider</span></a></li></ul></li><li class="nav-part" data-part="03"><a class="nav-part-a" href="#part-03"><span class="np">03</span><span class="nt">System Internals</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s11" data-target="s11"><span class="ns">11</span><span class="nx">Binder IPC</span></a></li><li><a class="nav-a" href="#s12" data-target="s12"><span class="ns">12</span><span class="nx">Android system services</span></a></li><li><a class="nav-a" href="#s13" data-target="s13"><span class="ns">13</span><span class="nx">Zygote</span></a></li></ul></li><li class="nav-part" data-part="04"><a class="nav-part-a" href="#part-04"><span class="np">04</span><span class="nt">The Security Model</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s14" data-target="s14"><span class="ns">14</span><span class="nx">The application sandbox</span></a></li><li><a class="nav-a" href="#s15" data-target="s15"><span class="ns">15</span><span class="nx">Linux permissions</span></a></li><li><a class="nav-a" href="#s16" data-target="s16"><span class="ns">16</span><span class="nx">SELinux</span></a></li><li><a class="nav-a" href="#s17" data-target="s17"><span class="ns">17</span><span class="nx">The permission model</span></a></li><li><a class="nav-a" href="#s18" data-target="s18"><span class="ns">18</span><span class="nx">Normal vs dangerous permissions</span></a></li><li><a class="nav-a" href="#s19" data-target="s19"><span class="ns">19</span><span class="nx">Runtime permissions</span></a></li><li><a class="nav-a" href="#s20" data-target="s20"><span class="ns">20</span><span class="nx">Permission revocation</span></a></li><li><a class="nav-a" href="#s21" data-target="s21"><span class="ns">21</span><span class="nx">Android Keystore</span></a></li><li><a class="nav-a" href="#s22" data-target="s22"><span class="ns">22</span><span class="nx">Encryption: at rest and in transit</span></a></li><li><a class="nav-a" href="#s23" data-target="s23"><span class="ns">23</span><span class="nx">Verified Boot</span></a></li><li><a class="nav-a" href="#s24" data-target="s24"><span class="ns">24</span><span class="nx">The bootloader</span></a></li><li><a class="nav-a" href="#s25" data-target="s25"><span class="ns">25</span><span class="nx">Root access</span></a></li><li><a class="nav-a" href="#s26" data-target="s26"><span class="ns">26</span><span class="nx">Root vs exploit</span></a></li></ul></li><li class="nav-part" data-part="05"><a class="nav-part-a" href="#part-05"><span class="np">05</span><span class="nt">Attack Surface</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s27" data-target="s27"><span class="ns">27</span><span class="nx">The Android attack surface</span></a></li><li><a class="nav-a" href="#s28" data-target="s28"><span class="ns">28</span><span class="nx">The application attack surface</span></a></li></ul></li><li class="nav-part" data-part="06"><a class="nav-part-a" href="#part-06"><span class="np">06</span><span class="nt">Analysis &amp; Tooling</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s29" data-target="s29"><span class="ns">29</span><span class="nx">Static analysis</span></a></li><li><a class="nav-a" href="#s30" data-target="s30"><span class="ns">30</span><span class="nx">Dynamic analysis</span></a></li><li><a class="nav-a" href="#s31" data-target="s31"><span class="ns">31</span><span class="nx">ADB — Android Debug Bridge</span></a></li><li><a class="nav-a" href="#s32" data-target="s32"><span class="ns">32</span><span class="nx">The Android emulator</span></a></li><li><a class="nav-a" href="#s33" data-target="s33"><span class="ns">33</span><span class="nx">A recommended lab</span></a></li><li><a class="nav-a" href="#s34" data-target="s34"><span class="ns">34</span><span class="nx">APK reverse engineering</span></a></li><li><a class="nav-a" href="#s35" data-target="s35"><span class="ns">35</span><span class="nx">DEX</span></a></li><li><a class="nav-a" href="#s36" data-target="s36"><span class="ns">36</span><span class="nx">Smali</span></a></li><li><a class="nav-a" href="#s37" data-target="s37"><span class="ns">37</span><span class="nx">Application signing</span></a></li><li><a class="nav-a" href="#s38" data-target="s38"><span class="ns">38</span><span class="nx">Debuggable applications</span></a></li><li><a class="nav-a" href="#s39" data-target="s39"><span class="ns">39</span><span class="nx">Backup security</span></a></li></ul></li><li class="nav-part" data-part="07"><a class="nav-part-a" href="#part-07"><span class="np">07</span><span class="nt">Application Vulnerabilities</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s40" data-target="s40"><span class="ns">40</span><span class="nx">Insecure data storage</span></a></li><li><a class="nav-a" href="#s41" data-target="s41"><span class="ns">41</span><span class="nx">SharedPreferences</span></a></li><li><a class="nav-a" href="#s42" data-target="s42"><span class="ns">42</span><span class="nx">SQLite databases</span></a></li><li><a class="nav-a" href="#s43" data-target="s43"><span class="ns">43</span><span class="nx">Logging</span></a></li><li><a class="nav-a" href="#s44" data-target="s44"><span class="ns">44</span><span class="nx">Intent security</span></a></li><li><a class="nav-a" href="#s45" data-target="s45"><span class="ns">45</span><span class="nx">Exported components</span></a></li><li><a class="nav-a" href="#s46" data-target="s46"><span class="ns">46</span><span class="nx">Deep links</span></a></li><li><a class="nav-a" href="#s47" data-target="s47"><span class="ns">47</span><span class="nx">WebView security</span></a></li><li><a class="nav-a" href="#s48" data-target="s48"><span class="ns">48</span><span class="nx">JavaScript interface risks</span></a></li></ul></li><li class="nav-part" data-part="08"><a class="nav-part-a" href="#part-08"><span class="np">08</span><span class="nt">Network &amp; Cryptography</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s49" data-target="s49"><span class="ns">49</span><span class="nx">Network security</span></a></li><li><a class="nav-a" href="#s50" data-target="s50"><span class="ns">50</span><span class="nx">HTTPS does not mean “secure”</span></a></li><li><a class="nav-a" href="#s51" data-target="s51"><span class="ns">51</span><span class="nx">Certificate validation</span></a></li><li><a class="nav-a" href="#s52" data-target="s52"><span class="ns">52</span><span class="nx">Certificate pinning</span></a></li><li><a class="nav-a" href="#s53" data-target="s53"><span class="ns">53</span><span class="nx">Authentication</span></a></li><li><a class="nav-a" href="#s54" data-target="s54"><span class="ns">54</span><span class="nx">Authorization</span></a></li><li><a class="nav-a" href="#s55" data-target="s55"><span class="ns">55</span><span class="nx">Broken access control</span></a></li><li><a class="nav-a" href="#s56" data-target="s56"><span class="ns">56</span><span class="nx">Token security</span></a></li><li><a class="nav-a" href="#s57" data-target="s57"><span class="ns">57</span><span class="nx">Cryptography</span></a></li><li><a class="nav-a" href="#s58" data-target="s58"><span class="ns">58</span><span class="nx">Common cryptographic mistakes</span></a></li><li><a class="nav-a" href="#s59" data-target="s59"><span class="ns">59</span><span class="nx">Hardcoded secrets</span></a></li></ul></li><li class="nav-part" data-part="09"><a class="nav-part-a" href="#part-09"><span class="np">09</span><span class="nt">The Native Layer</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s60" data-target="s60"><span class="ns">60</span><span class="nx">Native libraries</span></a></li><li><a class="nav-a" href="#s61" data-target="s61"><span class="ns">61</span><span class="nx">JNI</span></a></li><li><a class="nav-a" href="#s62" data-target="s62"><span class="ns">62</span><span class="nx">Memory-safety vulnerabilities</span></a></li></ul></li><li class="nav-part" data-part="10"><a class="nav-part-a" href="#part-10"><span class="np">10</span><span class="nt">Threats &amp; Human Factors</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s63" data-target="s63"><span class="ns">63</span><span class="nx">Malware</span></a></li><li><a class="nav-a" href="#s64" data-target="s64"><span class="ns">64</span><span class="nx">Social engineering</span></a></li><li><a class="nav-a" href="#s65" data-target="s65"><span class="ns">65</span><span class="nx">Man-in-the-Middle (MITM)</span></a></li><li><a class="nav-a" href="#s66" data-target="s66"><span class="ns">66</span><span class="nx">Public Wi-Fi</span></a></li></ul></li><li class="nav-part" data-part="11"><a class="nav-part-a" href="#part-11"><span class="np">11</span><span class="nt">Testing Methodology</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s67" data-target="s67"><span class="ns">67</span><span class="nx">A testing methodology</span></a></li><li><a class="nav-a" href="#s68" data-target="s68"><span class="ns">68</span><span class="nx">Reconnaissance</span></a></li><li><a class="nav-a" href="#s69" data-target="s69"><span class="ns">69</span><span class="nx">Threat modeling</span></a></li><li><a class="nav-a" href="#s70" data-target="s70"><span class="ns">70</span><span class="nx">OWASP Mobile Security</span></a></li><li><a class="nav-a" href="#s71" data-target="s71"><span class="ns">71</span><span class="nx">MASVS</span></a></li><li><a class="nav-a" href="#s72" data-target="s72"><span class="ns">72</span><span class="nx">Testing categories</span></a></li><li><a class="nav-a" href="#s73" data-target="s73"><span class="ns">73</span><span class="nx">A vulnerable-app lab</span></a></li></ul></li><li class="nav-part" data-part="12"><a class="nav-part-a" href="#part-12"><span class="np">12</span><span class="nt">Learning Path</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s74" data-target="s74"><span class="ns">74</span><span class="nx">Tools — a learning roadmap</span></a></li><li><a class="nav-a" href="#s75" data-target="s75"><span class="ns">75</span><span class="nx">What to learn first</span></a></li><li><a class="nav-a" href="#s76" data-target="s76"><span class="ns">76</span><span class="nx">Your first practical lab</span></a></li></ul></li><li class="nav-part" data-part="13"><a class="nav-part-a" href="#part-13"><span class="np">13</span><span class="nt">Hands-On Labs</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s77" data-target="s77"><span class="ns">77</span><span class="nx">Lab 1 — Understand ADB</span></a></li><li><a class="nav-a" href="#s78" data-target="s78"><span class="ns">78</span><span class="nx">Lab 2 — Inspect an APK</span></a></li><li><a class="nav-a" href="#s79" data-target="s79"><span class="ns">79</span><span class="nx">Lab 3 — Manifest review</span></a></li><li><a class="nav-a" href="#s80" data-target="s80"><span class="ns">80</span><span class="nx">Lab 4 — Storage review</span></a></li><li><a class="nav-a" href="#s81" data-target="s81"><span class="ns">81</span><span class="nx">Lab 5 — Network review</span></a></li><li><a class="nav-a" href="#s82" data-target="s82"><span class="ns">82</span><span class="nx">Lab 6 — Authentication review</span></a></li><li><a class="nav-a" href="#s83" data-target="s83"><span class="ns">83</span><span class="nx">Lab 7 — Authorization review</span></a></li><li><a class="nav-a" href="#s84" data-target="s84"><span class="ns">84</span><span class="nx">Lab 8 — Component security</span></a></li><li><a class="nav-a" href="#s85" data-target="s85"><span class="ns">85</span><span class="nx">Lab 9 — WebView security</span></a></li><li><a class="nav-a" href="#s86" data-target="s86"><span class="ns">86</span><span class="nx">Lab 10 — Reverse engineering</span></a></li><li><a class="nav-a" href="#s87" data-target="s87"><span class="ns">87</span><span class="nx">Lab 11 — Runtime instrumentation</span></a></li><li><a class="nav-a" href="#s88" data-target="s88"><span class="ns">88</span><span class="nx">Malware analysis lab</span></a></li><li><a class="nav-a" href="#s89" data-target="s89"><span class="ns">89</span><span class="nx">Incident response</span></a></li></ul></li><li class="nav-part" data-part="14"><a class="nav-part-a" href="#part-14"><span class="np">14</span><span class="nt">Building Secure</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s90" data-target="s90"><span class="ns">90</span><span class="nx">Secure development principles</span></a></li><li><a class="nav-a" href="#s91" data-target="s91"><span class="ns">91</span><span class="nx">Common beginner mistakes</span></a></li></ul></li><li class="nav-part" data-part="15"><a class="nav-part-a" href="#part-15"><span class="np">15</span><span class="nt">Master Map</span></a><ul class="nav-sub"><li><a class="nav-a" href="#s92" data-target="s92"><span class="ns">92</span><span class="nx">The complete learning map</span></a></li><li><a class="nav-a" href="#s93" data-target="s93"><span class="ns">93</span><span class="nx">The one mental model</span></a></li></ul></li></ul>
+    <p class="no-hits" id="no-hits">No topic matches that.</p>
+  </nav>
+</aside>
+
+<main class="main" id="main">
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-eyebrow">A complete study manual &middot; 93 topics &middot; 16 parts</div>
+    <h1>Android Security<br>&amp; Ethical Hacking</h1>
+    <p class="hero-lead">From the boot ROM to the WebView bridge &mdash; the whole platform, its trust boundaries, and how to test it safely. Built as a reference you return to, not a page you read once.</p>
+
+    <div class="hero-stack" aria-hidden="true">
+      <div class="stk untrusted"><span class="stk-tag">untrusted</span><span class="stk-name">The Internet &middot; user input &middot; other apps</span></div>
+      <div class="stk-boundary"><span>trust boundary &middot; permissions</span></div>
+      <div class="stk l1"><span class="stk-i">01</span><span class="stk-name">Applications</span><span class="stk-sub">Activities &middot; Services &middot; Receivers &middot; Providers</span></div>
+      <div class="stk l2"><span class="stk-i">02</span><span class="stk-name">Framework &amp; System Services</span><span class="stk-sub">Binder IPC &middot; Package/Activity managers</span></div>
+      <div class="stk l3"><span class="stk-i">03</span><span class="stk-name">Runtime &amp; Native Libraries</span><span class="stk-sub">ART &middot; JNI &middot; .so libraries</span></div>
+      <div class="stk l4"><span class="stk-i">04</span><span class="stk-name">HAL</span><span class="stk-sub">Camera &middot; Audio &middot; Sensors &middot; Biometrics</span></div>
+      <div class="stk l5"><span class="stk-i">05</span><span class="stk-name">Linux Kernel</span><span class="stk-sub">SELinux &middot; UID/GID isolation &middot; drivers</span></div>
+      <div class="stk hw"><span class="stk-name">Hardware</span><span class="stk-sub">Verified Boot &middot; hardware-backed Keystore</span></div>
+    </div>
+    <div class="hero-hint">Ask at every layer: <em>who may cross, with what data, at what privilege?</em></div>
+  </header>
+
+  <div class="content" id="content">
+    <div class="part" id="part-00"><div class="part-rail"><span class="part-n">00</span></div><div class="part-txt"><h2>Ground Rules</h2><p>The one rule that makes everything else legitimate.</p></div></div>
+<section class="sec" id="s0" data-n="0"><div class="sec-head"><span class="sec-n">00</span><h2>The rule before you start</h2></div><p>Android security testing is only ethical against targets you are authorized to touch. Everything in this manual assumes that boundary is never crossed.</p><ul class="bul"><li>Your own Android application.</li><li>Your own emulator or device.</li><li>Deliberately vulnerable training applications.</li><li>A dedicated lab environment.</li><li>Systems for which you hold explicit, written authorization.</li></ul><aside class="note rule"><div class="note-h">The loop that keeps testing honest</div><div class="note-b">Understand → Identify → Validate safely → Document → Fix → Retest. Exploitation is never the goal; understanding is. A finding you cannot document and remediate is noise.</div></aside></section>
+<div class="part" id="part-01"><div class="part-rail"><span class="part-n">01</span></div><div class="part-txt"><h2>Foundations</h2><p>What Android is, and the layers it is built from.</p></div></div>
+<section class="sec" id="s1" data-n="1"><div class="sec-head"><span class="sec-n">01</span><h2>What is Android?</h2></div><p>Android is a mobile operating system built on the <code>Linux kernel</code> and the Android Open Source Project (AOSP). It sits as a software platform between the person using the device and the hardware underneath.</p><p>Control flows top to bottom: User → Applications → Android Framework → Runtime and native libraries → HAL → Linux kernel → Hardware.</p><figure class="dia"><figcaption>Android architecture (simplified)</figcaption><pre>+-----------------------------------------+
+|              Applications               |
+|  Chat | Browser | Banking | Camera      |
++-----------------------------------------+
+|        Android Application Framework     |
+|  Activity Mgr | Package Mgr | Window Mgr |
+|  Notification | Location | Providers     |
++-----------------------------------------+
+|        Android Runtime + Libraries       |
+|  ART | Java/Kotlin APIs | Native C/C++   |
++-----------------------------------------+
+|       Hardware Abstraction Layer (HAL)   |
+|  Camera | Audio | Sensors | GPS | ...    |
++-----------------------------------------+
+|               Linux Kernel               |
+|  Process | Memory | Drivers | Network    |
+|  SELinux | Filesystem | IPC              |
++-----------------------------------------+
+|                 Hardware                 |
++-----------------------------------------+</pre></figure></section>
+<section class="sec" id="s2" data-n="2"><div class="sec-head"><span class="sec-n">02</span><h2>Android Open Source Project (AOSP)</h2></div><p>AOSP is the open-source foundation of Android. It contains the framework, system services, runtime, native libraries, system applications, build infrastructure, and kernel integration components.</p><p>Manufacturers take AOSP and customize it, which is why two Android phones can behave differently at the security layer.</p><figure class="dia"><figcaption>Why devices differ</figcaption><pre>AOSP
+  |
+Manufacturer customization
+  |
+Samsung / Pixel / Xiaomi / OnePlus ...
+  |
+Device-specific software</pre></figure></section>
+<section class="sec" id="s3" data-n="3"><div class="sec-head"><span class="sec-n">03</span><h2>The architecture in detail: the Linux kernel</h2></div><p>The Linux kernel is the lowest major software layer. It owns CPU scheduling, memory, processes, filesystems, networking, device drivers, power, security mechanisms, and inter-process communication. Android ships a modified kernel with Android-specific components.</p><h3 class="sub">Why the layer order matters for security</h3><p>Kernel code runs with extremely high privilege, so a kernel vulnerability can have very high impact. A weakness at a lower layer can affect everything above it.</p><figure class="dia"><figcaption>Privilege flows downward</figcaption><pre>Application
+   |
+Framework
+   |
+Native code
+   |
+Kernel
+   |
+Hardware</pre></figure><aside class="note key"><div class="note-h">Mental model</div><div class="note-b">The deeper the layer, the more it is trusted and the more damage a bug there can do. Attackers climb; defenders harden each rung.</div></aside></section>
+<section class="sec" id="s4" data-n="4"><div class="sec-head"><span class="sec-n">04</span><h2>Hardware Abstraction Layer (HAL)</h2></div><p>The HAL provides standard interfaces between framework components and hardware-specific implementations — camera, audio, sensors, Bluetooth, biometrics, GPS. Without it, framework developers would have to handle every vendor's hardware directly.</p><figure class="dia"><figcaption>HAL as translator</figcaption><pre>Android Framework
+       |
+      HAL
+       |
+Hardware-specific implementation
+       |
+Hardware</pre></figure></section>
+<section class="sec" id="s5" data-n="5"><div class="sec-head"><span class="sec-n">05</span><h2>The Android Runtime (ART)</h2></div><p>Older Android used <code>Dalvik</code>. Modern Android uses <code>ART</code>, the Android Runtime. Apps are written in Java or Kotlin and ultimately execute through the runtime.</p><ul class="bul"><li>DEX — the bytecode format the runtime consumes.</li><li>JIT — just-in-time compilation during execution.</li><li>AOT — ahead-of-time compilation at install or optimize time.</li><li>OAT — the optimized, compiled artifact ART produces.</li><li>Garbage collection — automatic memory management.</li></ul></section>
+<div class="part" id="part-02"><div class="part-rail"><span class="part-n">02</span></div><div class="part-txt"><h2>Application Anatomy</h2><p>Inside the APK and the four component types.</p></div></div>
+<section class="sec" id="s6" data-n="6"><div class="sec-head"><span class="sec-n">06</span><h2>The APK — Android Application Package</h2></div><p>An APK is the archive used to distribute and install an app. It bundles resources and executable information into one file.</p><figure class="dia"><figcaption>Typical APK contents</figcaption><pre>app.apk
+|
++-- AndroidManifest.xml
++-- classes.dex
++-- resources.arsc
++-- res/
++-- assets/
++-- lib/
+|   +-- arm64-v8a/
+|   +-- armeabi-v7a/
++-- META-INF/
++-- ...</pre></figure></section>
+<section class="sec" id="s7" data-n="7"><div class="sec-head"><span class="sec-n">07</span><h2>AndroidManifest.xml</h2></div><p>The manifest is one of the most important files during a test. It declares package info, the four component types, permissions, intent filters, configuration, and — critically — which components are exported.</p><figure class="code"><figcaption><span class="glyph">&gt;_</span>manifest snippet</figcaption><pre>&lt;activity
+    android:name=&quot;.MainActivity&quot;
+    android:exported=&quot;true&quot; /&gt;</pre></figure><aside class="note key"><div class="note-h">First thing to read</div><div class="note-b">Before running anything, read the manifest. Exported components, custom permissions, debuggable and backup flags, and deep-link intent filters all live here.</div></aside></section>
+<section class="sec" id="s8" data-n="8"><div class="sec-head"><span class="sec-n">08</span><h2>Components: Activity and Service</h2></div><h3 class="sub">Activity</h3><p>An Activity is a UI screen or interaction point — <code>LoginActivity</code>, <code>MainActivity</code>, <code>SettingsActivity</code>. Security-relevant questions: is it exported, how does it handle intents, does it accept deep links, and does it pass sensitive data through intents?</p><h3 class="sub">Service</h3><p>A Service does background work — playback, sync, long-running operations. Concerns: unauthorized invocation, exported services, missing permission enforcement, and sensitive data exposure.</p></section>
+<section class="sec" id="s9" data-n="9"><div class="sec-head"><span class="sec-n">09</span><h2>Broadcast Receiver</h2></div><p>Broadcast receivers respond to broadcast messages, including system events such as boot completion, connectivity changes, and battery state.</p><ul class="bul"><li>Unprotected broadcasts that anyone can send or receive.</li><li>Sensitive information carried inside broadcasts.</li><li>Improperly exported receivers.</li></ul></section>
+<section class="sec" id="s10" data-n="10"><div class="sec-head"><span class="sec-n">10</span><h2>Content Provider</h2></div><p>Content Providers offer structured data access between applications — contacts, media, app databases, documents.</p><figure class="dia"><figcaption>Provider as gateway</figcaption><pre>App A
+  |
+Content Provider
+  |
+Data</pre></figure><p>The core test: can an unauthorized app read or write sensitive data through this provider?</p></section>
+<div class="part" id="part-03"><div class="part-rail"><span class="part-n">03</span></div><div class="part-txt"><h2>System Internals</h2><p>Binder, system services, and how processes are born.</p></div></div>
+<section class="sec" id="s11" data-n="11"><div class="sec-head"><span class="sec-n">11</span><h2>Binder IPC</h2></div><p><code>Binder</code> is Android's primary inter-process communication mechanism. It lets separate processes talk to one another, and most framework services depend on it.</p><figure class="dia"><figcaption>Binder in the middle</figcaption><pre>Application
+    |
+Binder
+    |
+System Service
+    |
+Kernel / Hardware</pre></figure><p>Understanding Binder explains permissions, system services, IPC, app isolation, and privilege boundaries all at once.</p></section>
+<section class="sec" id="s12" data-n="12"><div class="sec-head"><span class="sec-n">12</span><h2>Android system services</h2></div><p>Android exposes many system services — Activity Manager, Package Manager, Window Manager, Power Manager, location, notifications. Apps reach them through framework APIs and IPC.</p></section>
+<section class="sec" id="s13" data-n="13"><div class="sec-head"><span class="sec-n">13</span><h2>Zygote</h2></div><p><code>Zygote</code> is a fundamental process. New application processes are forked from it, and it preloads parts of the runtime and framework so apps start faster.</p><figure class="dia"><figcaption>Process creation</figcaption><pre>Zygote
+   |
+Fork
+   |
+Application process</pre></figure><p>Zygote matters for advanced internals and exploit research because every app process inherits from it.</p></section>
+<div class="part" id="part-04"><div class="part-rail"><span class="part-n">04</span></div><div class="part-txt"><h2>The Security Model</h2><p>Sandbox, permissions, SELinux, Keystore, boot integrity.</p></div></div>
+<section class="sec" id="s14" data-n="14"><div class="sec-head"><span class="sec-n">14</span><h2>The application sandbox</h2></div><p>A core Android principle: applications are isolated from one another. Historically each app receives its own Linux UID.</p><figure class="dia"><figcaption>One UID per app</figcaption><pre>App A -&gt; UID 100xx
+App B -&gt; UID 100yy
+App C -&gt; UID 100zz</pre></figure><p>This prevents App A from directly reading App B's private files without a proper mechanism or permission.</p></section>
+<section class="sec" id="s15" data-n="15"><div class="sec-head"><span class="sec-n">15</span><h2>Linux permissions</h2></div><p>Android inherits Linux concepts: UID, GID, file ownership, file permissions, and processes.</p><figure class="code"><figcaption><span class="glyph">&gt;_</span>file ownership example</figcaption><pre>-rw------- app_user app_group database.db</pre></figure><p>The purpose is to restrict unauthorized access at the filesystem level.</p></section>
+<section class="sec" id="s16" data-n="16"><div class="sec-head"><span class="sec-n">16</span><h2>SELinux</h2></div><p><code>SELinux</code> (Security-Enhanced Linux) enforces mandatory access control on top of standard Linux permissions.</p><h3 class="sub">DAC vs MAC</h3><ul class="bul"><li>DAC — Discretionary Access Control, based on owner, group, and file permissions.</li><li>MAC — Mandatory Access Control, an additional policy layer the owner cannot simply waive.</li></ul><figure class="dia"><figcaption>Two layers of control</figcaption><pre>Linux permissions
+       +
+SELinux policy
+       =
+Additional security boundary</pre></figure><aside class="note key"><div class="note-h">Why it matters</div><div class="note-b">SELinux is central to Android privilege-escalation study. Even root is constrained by policy in enforcing mode.</div></aside></section>
+<section class="sec" id="s17" data-n="17"><div class="sec-head"><span class="sec-n">17</span><h2>The permission model</h2></div><p>Permissions gate access to protected capabilities: camera, microphone, location, contacts, notifications, Bluetooth, and storage or data depending on the Android version. The model has evolved considerably across releases.</p></section>
+<section class="sec" id="s18" data-n="18"><div class="sec-head"><span class="sec-n">18</span><h2>Normal vs dangerous permissions</h2></div><ul class="bul"><li>Normal — lower-risk permissions that generally do not need a runtime user decision.</li><li>Dangerous — permissions touching sensitive capabilities or data, requiring stronger authorization.</li></ul><p>Modern Android is more granular than this old binary split, but the categories remain a useful lens.</p></section>
+<section class="sec" id="s19" data-n="19"><div class="sec-head"><span class="sec-n">19</span><h2>Runtime permissions</h2></div><p>Modern apps request certain permissions while running rather than only at install.</p><figure class="dia"><figcaption>Runtime request flow</figcaption><pre>App
+ |
+Request permission
+ |
+Android system
+ |
+User decision
+ |
+Granted / Denied</pre></figure><p>Testing point: an app must never assume a permission is available without checking.</p></section>
+<section class="sec" id="s20" data-n="20"><div class="sec-head"><span class="sec-n">20</span><h2>Permission revocation</h2></div><p>Users can revoke permissions at any time, so a secure app must not assume a grant is permanent.</p><figure class="dia"><figcaption>Check every time</figcaption><pre>Check permission
+ |
+Perform operation if authorized
+ |
+Handle denial safely</pre></figure></section>
+<section class="sec" id="s21" data-n="21"><div class="sec-head"><span class="sec-n">21</span><h2>Android Keystore</h2></div><p>The Android Keystore system stores cryptographic keys and can protect them from direct extraction by app code.</p><ul class="bul"><li>Key generation and storage inside the system.</li><li>Hardware-backed security where the device supports it.</li><li>Authentication-bound keys that require user auth to use.</li><li>Cryptographic operations performed without exposing the key.</li></ul></section>
+<section class="sec" id="s22" data-n="22"><div class="sec-head"><span class="sec-n">22</span><h2>Encryption: at rest and in transit</h2></div><ul class="bul"><li>Data at rest — protecting information stored on the device.</li><li>Data in transit — protecting information moving across a network (HTTPS/TLS to the server).</li></ul><aside class="note warn"><div class="note-h">Encryption is not a magic word</div><div class="note-b">Strong cryptography with poor key management is still broken. How keys are generated, stored, and rotated decides whether encryption actually protects anything.</div></aside></section>
+<section class="sec" id="s23" data-n="23"><div class="sec-head"><span class="sec-n">23</span><h2>Verified Boot</h2></div><p>Verified Boot protects the integrity of the OS during startup, detecting unauthorized modification of protected system components.</p><figure class="dia"><figcaption>Chain of trust at boot</figcaption><pre>Boot ROM
+   |
+Bootloader
+   |
+Verified system components
+   |
+Android OS</pre></figure></section>
+<section class="sec" id="s24" data-n="24"><div class="sec-head"><span class="sec-n">24</span><h2>The bootloader</h2></div><p>The bootloader starts the operating system. Security-relevant concepts: locked vs unlocked bootloader, Verified Boot, firmware integrity, and the recovery environment.</p><aside class="note warn"><div class="note-h">Unlocking changes the posture</div><div class="note-b">Unlocking a bootloader alters the device's security guarantees and, on many devices, triggers a data wipe.</div></aside></section>
+<section class="sec" id="s25" data-n="25"><div class="sec-head"><span class="sec-n">25</span><h2>Root access</h2></div><p>Root is extremely privileged access. In Linux terms, <code>root = UID 0</code>. A normal app should never hold unrestricted root.</p><p>Rooting weakens several security assumptions, though modern Android adds defenses beyond a simple UID check.</p></section>
+<section class="sec" id="s26" data-n="26"><div class="sec-head"><span class="sec-n">26</span><h2>Root vs exploit</h2></div><ul class="bul"><li>Rooting — a process or configuration that provides elevated privileges.</li><li>Privilege-escalation exploit — a vulnerability that lets a lower-privileged process gain higher privilege.</li></ul><figure class="dia"><figcaption>Escalation</figcaption><pre>Normal user
+     |
+Vulnerability
+     |
+Higher privilege</pre></figure><p>They are related but not the same. One is a deliberate configuration; the other is an abuse of a flaw.</p></section>
+<div class="part" id="part-05"><div class="part-rail"><span class="part-n">05</span></div><div class="part-txt"><h2>Attack Surface</h2><p>Every place untrusted input can enter.</p></div></div>
+<section class="sec" id="s27" data-n="27"><div class="sec-head"><span class="sec-n">27</span><h2>The Android attack surface</h2></div><p>The attack surface spans the whole stack, and each layer can pass input to the next.</p><figure class="dia"><figcaption>Layers that can be attacked</figcaption><pre>Applications
+     |
+IPC
+     |
+Framework
+     |
+System Services
+     |
+Native Libraries
+     |
+HAL
+     |
+Kernel
+     |
+Drivers</pre></figure><p>External interfaces include network, Bluetooth, NFC, USB, web content, files, intents, deep links, external storage, sensors, and media parsers.</p></section>
+<section class="sec" id="s28" data-n="28"><div class="sec-head"><span class="sec-n">28</span><h2>The application attack surface</h2></div><p>When testing a single APK, walk this surface in order.</p><figure class="dia"><figcaption>Where to look, in order</figcaption><pre>Manifest
+   |
+Components
+   |
+IPC
+   |
+Input handling
+   |
+Storage
+   |
+Cryptography
+   |
+Network
+   |
+Native code
+   |
+WebViews</pre></figure></section>
+<div class="part" id="part-06"><div class="part-rail"><span class="part-n">06</span></div><div class="part-txt"><h2>Analysis &amp; Tooling</h2><p>Static, dynamic, ADB, the lab, and reverse engineering.</p></div></div>
+<section class="sec" id="s29" data-n="29"><div class="sec-head"><span class="sec-n">29</span><h2>Static analysis</h2></div><p>Static analysis examines the app without running it: manifest, DEX, resources, strings, URLs, API endpoints, secrets, crypto implementation, permissions, exported components, and native libraries.</p><p>Authorized-lab tools: <code>JADX</code>, <code>Apktool</code>, Android Studio, <code>MobSF</code>, and the Android build tools such as <code>aapt</code>.</p></section>
+<section class="sec" id="s30" data-n="30"><div class="sec-head"><span class="sec-n">30</span><h2>Dynamic analysis</h2></div><p>Dynamic analysis observes behavior while the app runs: processes, files, network, IPC, logs, API calls, and how security controls behave in practice.</p><p>Common lab tools: <code>ADB</code>, the Android Studio debugger, <code>Frida</code>, <code>Burp Suite</code>, <code>mitmproxy</code>, and <code>logcat</code>.</p></section>
+<section class="sec" id="s31" data-n="31"><div class="sec-head"><span class="sec-n">31</span><h2>ADB — Android Debug Bridge</h2></div><p>ADB is one of the most important tools in Android security. It bridges your computer to a device or emulator.</p><figure class="dia"><figcaption>The bridge</figcaption><pre>Computer
+   |
+ADB
+   |
+Android device / emulator</pre></figure><figure class="code"><figcaption><span class="glyph">&gt;_</span>core adb commands</figcaption><pre>adb devices          # list connected devices
+adb shell            # open a shell on the device
+adb logcat           # view Android logs
+adb install app.apk  # install into a permitted test env</pre></figure></section>
+<section class="sec" id="s32" data-n="32"><div class="sec-head"><span class="sec-n">32</span><h2>The Android emulator</h2></div><p>For learning, an emulator beats attacking someone else's device. You can snapshot and reset the environment after each experiment.</p><figure class="dia"><figcaption>Emulator lab</figcaption><pre>Host Linux machine
+       |
+Android Emulator
+       |
+Test APK
+       |
+Security tools</pre></figure></section>
+<section class="sec" id="s33" data-n="33"><div class="sec-head"><span class="sec-n">33</span><h2>A recommended lab</h2></div><h3 class="sub">Host</h3><ul class="bul"><li>Linux</li><li>Android Studio</li><li>Android SDK</li><li>ADB</li></ul><h3 class="sub">Emulator</h3><ul class="bul"><li>An Android system image</li><li>A debuggable test environment</li></ul><h3 class="sub">Analysis</h3><ul class="bul"><li>JADX</li><li>Apktool</li><li>MobSF</li></ul><h3 class="sub">Network &amp; runtime</h3><ul class="bul"><li>Burp Suite or another authorized proxy</li><li>Frida</li><li>The Android debugger</li></ul><h3 class="sub">Targets</h3><ul class="bul"><li>Intentionally vulnerable apps built for training.</li></ul></section>
+<section class="sec" id="s34" data-n="34"><div class="sec-head"><span class="sec-n">34</span><h2>APK reverse engineering</h2></div><p>A common workflow moves from artifact to understanding to validated finding.</p><figure class="dia"><figcaption>RE workflow</figcaption><pre>APK
+ |
+Decode
+ |
+Inspect Manifest
+ |
+Analyze DEX
+ |
+Identify attack surface
+ |
+Run application
+ |
+Observe behavior
+ |
+Validate vulnerability
+ |
+Document</pre></figure></section>
+<section class="sec" id="s35" data-n="35"><div class="sec-head"><span class="sec-n">35</span><h2>DEX</h2></div><p>Android apps commonly contain <code>classes.dex</code>. DEX means Dalvik Executable and holds the bytecode the runtime executes. Tools such as JADX decompile it toward readable Java.</p></section>
+<section class="sec" id="s36" data-n="36"><div class="sec-head"><span class="sec-n">36</span><h2>Smali</h2></div><p>Smali is a human-readable representation of Android bytecode instructions — a lower level than decompiled Java, and where you work when logic must be read or patched precisely.</p><figure class="dia"><figcaption>From source to smali</figcaption><pre>Java / Kotlin
+    |
+DEX
+    |
+Smali representation</pre></figure></section>
+<section class="sec" id="s37" data-n="37"><div class="sec-head"><span class="sec-n">37</span><h2>Application signing</h2></div><p>Android apps are cryptographically signed. Signatures establish app identity, tie updates to the same author, and protect package integrity. Know the signing schemes (v1–v4) and how certificates are handled.</p></section>
+<section class="sec" id="s38" data-n="38"><div class="sec-head"><span class="sec-n">38</span><h2>Debuggable applications</h2></div><p>A debuggable build gains extra debugging capability. That is fine in development but a real risk if it ships to production.</p><figure class="code"><figcaption><span class="glyph">&gt;_</span>flag to inspect</figcaption><pre>android:debuggable</pre></figure></section>
+<section class="sec" id="s39" data-n="39"><div class="sec-head"><span class="sec-n">39</span><h2>Backup security</h2></div><p>Backup configuration can pull app data into backups. Ask whether tokens, databases, preferences, credentials, or user data can unintentionally leave the app through backup.</p></section>
+<div class="part" id="part-07"><div class="part-rail"><span class="part-n">07</span></div><div class="part-txt"><h2>Application Vulnerabilities</h2><p>Storage, IPC, deep links, and WebViews.</p></div></div>
+<section class="sec" id="s40" data-n="40"><div class="sec-head"><span class="sec-n">40</span><h2>Insecure data storage</h2></div><p>Inappropriate local storage is among the most common mobile problems. Passwords, API keys, session and access tokens, and personal information all get stored insecurely.</p><p>Common locations: shared preferences, SQLite databases, files, external storage, logs, and caches.</p></section>
+<section class="sec" id="s41" data-n="41"><div class="sec-head"><span class="sec-n">41</span><h2>SharedPreferences</h2></div><p>SharedPreferences is convenient key-value storage — and convenience is the trap.</p><figure class="code"><figcaption><span class="glyph">&gt;_</span>what you often find</figcaption><pre>username = uday
+token    = XXXXX</pre></figure><aside class="note warn"><div class="note-h">Convenience is not a security decision</div><div class="note-b">Sensitive secrets should not sit in plaintext just because SharedPreferences is easy. Use proper cryptographic or Keystore-backed storage.</div></aside></section>
+<section class="sec" id="s42" data-n="42"><div class="sec-head"><span class="sec-n">42</span><h2>SQLite databases</h2></div><p>Apps frequently use SQLite for users, messages, transactions, settings, and cached data. Check for sensitive data, access controls, encryption needs, backup exposure, injection risks, and debug or log leakage.</p></section>
+<section class="sec" id="s43" data-n="43"><div class="sec-head"><span class="sec-n">43</span><h2>Logging</h2></div><p>Apps sometimes log secrets by accident — login tokens, passwords. Production apps must avoid sensitive logging.</p><figure class="code"><figcaption><span class="glyph">&gt;_</span>inspect logs (authorized env)</figcaption><pre>adb logcat</pre></figure></section>
+<section class="sec" id="s44" data-n="44"><div class="sec-head"><span class="sec-n">44</span><h2>Intent security</h2></div><p>Intents let components communicate. Concerns: untrusted input, exported components, sensitive extras, implicit intents, intent redirection, and URI handling.</p><figure class="dia"><figcaption>Intent between activities</figcaption><pre>Activity A
+   | Intent
+Activity B</pre></figure></section>
+<section class="sec" id="s45" data-n="45"><div class="sec-head"><span class="sec-n">45</span><h2>Exported components</h2></div><p>A component may be reachable by other apps depending on its configuration and the Android version.</p><aside class="note key"><div class="note-h">The question to ask</div><div class="note-b">Does this component truly need to be externally accessible? If not, minimize its exposure.</div></aside></section>
+<section class="sec" id="s46" data-n="46"><div class="sec-head"><span class="sec-n">46</span><h2>Deep links</h2></div><p>Deep links open app functionality from a URL or URI scheme, e.g. <code>myapp://profile/123</code>.</p><ul class="bul"><li>Authentication bypass via a link that skips a gate.</li><li>Unauthorized actions triggered by parameters.</li><li>Malicious parameters and open redirects.</li><li>Sensitive information exposed in the link.</li></ul></section>
+<section class="sec" id="s47" data-n="47"><div class="sec-head"><span class="sec-n">47</span><h2>WebView security</h2></div><p>WebView embeds web content inside an app. Issues involve JavaScript, URL validation, unsafe bridges, local file access, untrusted content, mixed content, and navigation handling.</p><aside class="note warn"><div class="note-h">A WebView is not a browser</div><div class="note-b">Do not treat a WebView as equivalent to a hardened browser. It runs inside your app's trust boundary.</div></aside></section>
+<section class="sec" id="s48" data-n="48"><div class="sec-head"><span class="sec-n">48</span><h2>JavaScript interface risks</h2></div><p>Apps can expose Java or Kotlin functionality to JavaScript through a bridge. A poorly designed bridge becomes a serious attack surface.</p><figure class="dia"><figcaption>The bridge crosses a trust boundary</figcaption><pre>JavaScript
+    |
+WebView bridge
+    |
+Native Android code</pre></figure></section>
+<div class="part" id="part-08"><div class="part-rail"><span class="part-n">08</span></div><div class="part-txt"><h2>Network &amp; Cryptography</h2><p>TLS, pinning, auth, tokens, and crypto mistakes.</p></div></div>
+<section class="sec" id="s49" data-n="49"><div class="sec-head"><span class="sec-n">49</span><h2>Network security</h2></div><p>Apps talk to APIs constantly. The path runs App → HTTPS → API gateway → backend → database.</p><p>Examine TLS configuration, certificate validation, authentication, authorization, API tokens, sensitive data in transit, request manipulation, and server-side validation.</p></section>
+<section class="sec" id="s50" data-n="50"><div class="sec-head"><span class="sec-n">50</span><h2>HTTPS does not mean “secure”</h2></div><p>HTTPS protects the channel when implemented correctly. The app can still have broken authentication or authorization, weak tokens, insecure APIs, data exposure, and business-logic flaws.</p><aside class="note key"><div class="note-h">Remember</div><div class="note-b">HTTPS ≠ complete application security. The transport can be perfect while the logic behind it is wide open.</div></aside></section>
+<section class="sec" id="s51" data-n="51"><div class="sec-head"><span class="sec-n">51</span><h2>Certificate validation</h2></div><p>Apps must correctly validate server certificates: accept valid ones, reject invalid ones, and use appropriate trust configuration. Never disable validation in production to make testing easier — use a controlled lab interception setup instead.</p></section>
+<section class="sec" id="s52" data-n="52"><div class="sec-head"><span class="sec-n">52</span><h2>Certificate pinning</h2></div><p>Pinning compares the server against an expected identity and rejects anything else, making interception harder.</p><figure class="dia"><figcaption>Pinning decision</figcaption><pre>Expected server identity
+        |
+Compare
+        |
+Connection accepted / rejected</pre></figure><p>In authorized testing the goal is to judge whether the pinning implementation is correct — not merely to defeat it without understanding it.</p></section>
+<section class="sec" id="s53" data-n="53"><div class="sec-head"><span class="sec-n">53</span><h2>Authentication</h2></div><p>Authentication answers “who are you?” — username and password, OTP, biometrics, passkeys, hardware-backed authentication.</p></section>
+<section class="sec" id="s54" data-n="54"><div class="sec-head"><span class="sec-n">54</span><h2>Authorization</h2></div><p>Authorization answers “what are you allowed to do?” This distinction is critical.</p><figure class="dia"><figcaption>Same identity, different rights</figcaption><pre>User A -&gt; own account         = allowed
+User A -&gt; another user&#x27;s acct = should be denied</pre></figure></section>
+<section class="sec" id="s55" data-n="55"><div class="sec-head"><span class="sec-n">55</span><h2>Broken access control</h2></div><p>An app can look secure on the device while the backend has authorization holes.</p><figure class="code"><figcaption><span class="glyph">&gt;_</span>the classic IDOR probe</figcaption><pre>GET /api/user/1001</pre></figure><p>If changing the identifier reveals another user's data, the flaw is primarily an authorization problem — and it lives on the server. Test only authorized systems.</p></section>
+<section class="sec" id="s56" data-n="56"><div class="sec-head"><span class="sec-n">56</span><h2>Token security</h2></div><p>Modern apps use session cookies, OAuth tokens, access and refresh tokens, and JWTs. For each, consider storage, expiration, revocation, scope, transmission, leakage, and replay resistance.</p></section>
+<section class="sec" id="s57" data-n="57"><div class="sec-head"><span class="sec-n">57</span><h2>Cryptography</h2></div><h3 class="sub">Symmetric encryption</h3><p>Same key encrypts and decrypts. Example: AES.</p><figure class="dia"><figcaption>Symmetric flow</figcaption><pre>Plaintext
+   | Key
+Ciphertext
+   | Same key
+Plaintext</pre></figure><h3 class="sub">Asymmetric cryptography</h3><p>Public and private key pairs. Examples: RSA, elliptic-curve cryptography.</p><h3 class="sub">Hashing</h3><p>One-way transformation, e.g. SHA-256. Passwords need password-specific hashing or a KDF (such as bcrypt, scrypt, or Argon2), not a plain hash.</p></section>
+<section class="sec" id="s58" data-n="58"><div class="sec-head"><span class="sec-n">58</span><h2>Common cryptographic mistakes</h2></div><ul class="bul"><li>Hardcoded keys shipped inside the app.</li><li>Weak or outdated algorithms.</li><li>Hardcoded IVs or nonces where they must be unique.</li><li>Reused keys across contexts.</li><li>Predictable random values.</li><li>Plaintext secrets.</li><li>Incorrect certificate validation.</li><li>Poor key storage.</li></ul></section>
+<section class="sec" id="s59" data-n="59"><div class="sec-head"><span class="sec-n">59</span><h2>Hardcoded secrets</h2></div><figure class="code"><figcaption><span class="glyph">&gt;_</span>the anti-pattern</figcaption><pre>String API_KEY = &quot;secret-key&quot;;</pre></figure><p>A secret embedded in an APK should be assumed recoverable, because the APK is distributed to the client.</p><aside class="note key"><div class="note-h">The rule</div><div class="note-b">Do not treat application binaries as secret storage. Anything shipped to the client is reachable by a determined analyst.</div></aside></section>
+<div class="part" id="part-09"><div class="part-rail"><span class="part-n">09</span></div><div class="part-txt"><h2>The Native Layer</h2><p>JNI, native libraries, and memory safety.</p></div></div>
+<section class="sec" id="s60" data-n="60"><div class="sec-head"><span class="sec-n">60</span><h2>Native libraries</h2></div><p>Apps can bundle native code compiled per-ABI.</p><figure class="dia"><figcaption>Native libs by architecture</figcaption><pre>lib/
+ +-- arm64-v8a/
+ |     +-- libexample.so
+ +-- armeabi-v7a/
+       +-- libexample.so</pre></figure><p>Native testing touches memory safety, native API misuse, JNI interfaces, hardcoded secrets, and unsafe parsing.</p></section>
+<section class="sec" id="s61" data-n="61"><div class="sec-head"><span class="sec-n">61</span><h2>JNI</h2></div><p>JNI lets Java or Kotlin code call into native C/C++ and back. The boundary itself introduces additional risk, especially memory-safety bugs.</p><figure class="dia"><figcaption>Crossing into native</figcaption><pre>Kotlin / Java
+     |
+JNI
+     |
+C / C++</pre></figure></section>
+<section class="sec" id="s62" data-n="62"><div class="sec-head"><span class="sec-n">62</span><h2>Memory-safety vulnerabilities</h2></div><ul class="bul"><li>Buffer overflow.</li><li>Use-after-free.</li><li>Integer overflow.</li><li>Out-of-bounds access.</li><li>Double-free.</li><li>Improper pointer handling.</li></ul><p>Modern Android has many mitigations, but memory safety remains a core topic in native code.</p></section>
+<div class="part" id="part-10"><div class="part-rail"><span class="part-n">10</span></div><div class="part-txt"><h2>Threats &amp; Human Factors</h2><p>Malware, social engineering, and the network.</p></div></div>
+<section class="sec" id="s63" data-n="63"><div class="sec-head"><span class="sec-n">63</span><h2>Malware</h2></div><p>Android malware may steal credentials, spy on users, abuse accessibility services, intercept notifications, collect personal data, commit fraud, and maintain persistence.</p><aside class="note warn"><div class="note-h">Contain it</div><div class="note-b">Analyze malware only inside an isolated lab. Never install an unknown APK on your primary, banking, or work phone.</div></aside></section>
+<section class="sec" id="s64" data-n="64"><div class="sec-head"><span class="sec-n">64</span><h2>Social engineering</h2></div><p>Not every attack needs an exploit. Attackers trick users into installing fake apps, granting permissions, entering credentials, opening malicious links, or enabling dangerous settings.</p><aside class="note key"><div class="note-h">People are attack surface</div><div class="note-b">Human behavior is part of the mobile threat model, not separate from it.</div></aside></section>
+<section class="sec" id="s65" data-n="65"><div class="sec-head"><span class="sec-n">65</span><h2>Man-in-the-Middle (MITM)</h2></div><p>A MITM attack places an attacker between two communicating parties to observe, modify requests, or modify responses.</p><figure class="dia"><figcaption>In the middle</figcaption><pre>App  &lt;-&gt;  Attacker  &lt;-&gt;  Server</pre></figure><p>Correct TLS validation is the key defense. Only intercept systems you are authorized to test.</p></section>
+<section class="sec" id="s66" data-n="66"><div class="sec-head"><span class="sec-n">66</span><h2>Public Wi-Fi</h2></div><p>Untrusted networks add risk. Practical defenses:</p><ul class="bul"><li>Use HTTPS everywhere.</li><li>Avoid unknown networks and verify network names.</li><li>Keep the OS updated.</li><li>Never install certificates from untrusted sources.</li><li>Use trusted VPN or security infrastructure where appropriate.</li></ul></section>
+<div class="part" id="part-11"><div class="part-rail"><span class="part-n">11</span></div><div class="part-txt"><h2>Testing Methodology</h2><p>A repeatable professional workflow, OWASP, MASVS.</p></div></div>
+<section class="sec" id="s67" data-n="67"><div class="sec-head"><span class="sec-n">67</span><h2>A testing methodology</h2></div><p>A professional engagement follows a repeatable order from scope to report.</p><ol class="ord"><li>Define scope.</li><li>Obtain authorization.</li><li>Information gathering.</li><li>APK acquisition.</li><li>Static analysis.</li><li>Manifest analysis.</li><li>Dynamic analysis.</li><li>Network analysis.</li><li>Authentication testing.</li><li>Authorization testing.</li><li>Data-storage testing.</li><li>IPC / component testing.</li><li>WebView testing.</li><li>Native-code analysis.</li><li>Validate findings.</li><li>Risk assessment.</li><li>Remediation.</li><li>Retest.</li><li>Report.</li></ol></section>
+<section class="sec" id="s68" data-n="68"><div class="sec-head"><span class="sec-n">68</span><h2>Reconnaissance</h2></div><p>Before testing, gather app name, package name, version, target Android version, permissions, components, APIs, domains, technologies, and native libraries.</p><aside class="note key"><div class="note-h">Understand before you exploit</div><div class="note-b">Do not start breaking things immediately. First build a clear picture of the application.</div></aside></section>
+<section class="sec" id="s69" data-n="69"><div class="sec-head"><span class="sec-n">69</span><h2>Threat modeling</h2></div><ul class="bul"><li>Assets — what needs protecting? Credentials, money, personal information, tokens, keys.</li><li>Threat actors — who might attack?</li><li>Entry points — where can input enter?</li><li>Trust boundaries — where does trust change?</li></ul><figure class="dia"><figcaption>Boundaries along the path</figcaption><pre>Untrusted Internet
+       |
+Android App
+       |
+Backend API
+       |
+Database</pre></figure></section>
+<section class="sec" id="s70" data-n="70"><div class="sec-head"><span class="sec-n">70</span><h2>OWASP Mobile Security</h2></div><p>The OWASP Mobile Application Security ecosystem is a major learning resource. Key topics:</p><ul class="bul"><li>Improper credential usage.</li><li>Insecure authentication and authorization.</li><li>Insufficient cryptography.</li><li>Insecure communication.</li><li>Insecure data storage.</li><li>Code quality and code tampering.</li><li>Reverse engineering and extraneous functionality.</li></ul><p>OWASP also provides mobile testing guidance and the MASVS / MASWE resources.</p></section>
+<section class="sec" id="s71" data-n="71"><div class="sec-head"><span class="sec-n">71</span><h2>MASVS</h2></div><p>The OWASP Mobile Application Security Verification Standard sets security requirements for mobile apps across storage, cryptography, authentication, network communication, platform interaction, code quality, and resilience. It is how you move from “learning to hack” to professional testing.</p></section>
+<section class="sec" id="s72" data-n="72"><div class="sec-head"><span class="sec-n">72</span><h2>Testing categories</h2></div><p>Organize your testing into clear buckets so nothing is missed.</p><ul class="bul"><li>A — Storage.   B — Cryptography.   C — Authentication.   D — Authorization.</li><li>E — Network.   F — Platform interaction.   G — Code quality.</li><li>H — Reverse engineering.   I — Tampering.   J — Privacy.</li><li>K — Native code.   L — Backend / API.</li></ul></section>
+<section class="sec" id="s73" data-n="73"><div class="sec-head"><span class="sec-n">73</span><h2>A vulnerable-app lab</h2></div><p>Deliberately vulnerable apps are the ideal practice target. Split the work three ways and converge on findings.</p><figure class="dia"><figcaption>Three lanes, one report</figcaption><pre>                  +---------------+
+                  |  Android APK  |
+                  +-------+-------+
+                          |
+        +-----------------+-----------------+
+        v                 v                 v
+     Static            Dynamic            Network
+     Analysis          Analysis           Analysis
+        |                 |                 |
+     JADX /            ADB /             Proxy
+     Apktool           Frida
+        |                 |                 |
+        +-----------------+-----------------+
+                          v
+                  Security Findings
+                          v
+                    Remediation</pre></figure></section>
+<div class="part" id="part-12"><div class="part-rail"><span class="part-n">12</span></div><div class="part-txt"><h2>Learning Path</h2><p>Tool roadmap and the order to learn things in.</p></div></div>
+<section class="sec" id="s74" data-n="74"><div class="sec-head"><span class="sec-n">74</span><h2>Tools — a learning roadmap</h2></div><h3 class="sub">Beginner</h3><ul class="bul"><li>ADB</li><li>Android Studio</li><li>Android Emulator</li><li>JADX</li><li>Apktool</li><li>logcat</li></ul><h3 class="sub">Intermediate</h3><ul class="bul"><li>MobSF</li><li>Burp Suite</li><li>Frida</li><li>mitmproxy</li><li>Smali</li><li>DEX analysis</li></ul><h3 class="sub">Advanced</h3><ul class="bul"><li>Ghidra</li><li>LLDB</li><li>JNI</li><li>Native reversing</li><li>Binder</li><li>SELinux</li><li>Kernel security</li><li>AOSP</li><li>Android internals</li></ul></section>
+<section class="sec" id="s75" data-n="75"><div class="sec-head"><span class="sec-n">75</span><h2>What to learn first</h2></div><p>Do not learn Frida, kernel exploitation, reverse engineering, and malware analysis all at once. Follow the levels.</p><ol class="ord"><li>Level 1 — Linux: files, processes, users, groups, permissions, networking, shell, services.</li><li>Level 2 — Android fundamentals: APK, manifest, activities, services, receivers, providers, intents, permissions.</li><li>Level 3 — ADB: device connection, shell, package management, logs, files, processes.</li><li>Level 4 — Static analysis: JADX, Apktool, DEX, Smali, manifest analysis.</li><li>Level 5 — Dynamic analysis: debugging, runtime observation, Frida, logs, files, processes.</li><li>Level 6 — Network security: HTTP, HTTPS, TLS, certificates, APIs, authentication, authorization.</li><li>Level 7 — Advanced Android: Binder, SELinux, Zygote, ART, native libraries, JNI, kernel.</li></ol></section>
+<section class="sec" id="s76" data-n="76"><div class="sec-head"><span class="sec-n">76</span><h2>Your first practical lab</h2></div><figure class="dia"><figcaption>Assemble this</figcaption><pre>Your Linux / Parrot OS
+        |
+        +-- Android Studio
+        +-- Android SDK
+        +-- ADB
+        +-- JADX
+        +-- Apktool
+        +-- MobSF
+        +-- Android Emulator
+                  |
+                  +-- Vulnerable Test APK</pre></figure><aside class="note warn"><div class="note-h">Never test on your daily phone</div><div class="note-b">Do not use your personal banking phone as the testing device.</div></aside></section>
+<div class="part" id="part-13"><div class="part-rail"><span class="part-n">13</span></div><div class="part-txt"><h2>Hands-On Labs</h2><p>Eleven guided labs plus malware and incident response.</p></div></div>
+<section class="sec" id="s77" data-n="77"><div class="sec-head"><span class="sec-n">77</span><h2>Lab 1 — Understand ADB</h2></div><p>Start by identifying the device, then explore the shell and your privilege context.</p><figure class="code"><figcaption><span class="glyph">&gt;_</span>first commands</figcaption><pre>adb devices
+adb shell
+# inside the authorized test environment:
+id
+pwd
+ls</pre></figure><p>The point of this first exercise is simply to understand the Android shell and the privilege you run with.</p></section>
+<section class="sec" id="s78" data-n="78"><div class="sec-head"><span class="sec-n">78</span><h2>Lab 2 — Inspect an APK</h2></div><p>Take a deliberately vulnerable APK and determine its package name, version, permissions, activities, services, receivers, providers, libraries, and URLs. Then open it in JADX and Apktool.</p><aside class="note key"><div class="note-h">Understanding, not exploitation</div><div class="note-b">The goal of this lab is to understand the app — not to immediately break it.</div></aside></section>
+<section class="sec" id="s79" data-n="79"><div class="sec-head"><span class="sec-n">79</span><h2>Lab 3 — Manifest review</h2></div><p>Turn the manifest into a standing checklist you run every time.</p><ul class="chk"><li><span class="box"></span>Package name</li><li><span class="box"></span>Version</li><li><span class="box"></span>Target SDK</li><li><span class="box"></span>Minimum SDK</li><li><span class="box"></span>Permissions</li><li><span class="box"></span>Exported Activities</li><li><span class="box"></span>Exported Services</li><li><span class="box"></span>Exported Receivers</li><li><span class="box"></span>Content Providers</li><li><span class="box"></span>Intent Filters</li><li><span class="box"></span>Deep Links</li><li><span class="box"></span>Debuggable configuration</li><li><span class="box"></span>Backup configuration</li></ul></section>
+<section class="sec" id="s80" data-n="80"><div class="sec-head"><span class="sec-n">80</span><h2>Lab 4 — Storage review</h2></div><p>Look through SharedPreferences, SQLite, files, caches, logs, external storage, and app databases. For each, ask three questions in order.</p><ol class="ord"><li>Is sensitive information stored here?</li><li>Who can access it?</li><li>Is it encrypted appropriately?</li></ol></section>
+<section class="sec" id="s81" data-n="81"><div class="sec-head"><span class="sec-n">81</span><h2>Lab 5 — Network review</h2></div><p>Map the network architecture, then document what crosses it.</p><figure class="dia"><figcaption>Trace the path</figcaption><pre>Application
+    |
+DNS
+    |
+Domain
+    |
+TLS
+    |
+API
+    |
+Authentication
+    |
+Backend</pre></figure><ul class="bul"><li>Domains and API endpoints.</li><li>Authentication method and token types.</li><li>TLS behavior.</li><li>Sensitive information transmitted.</li></ul></section>
+<section class="sec" id="s82" data-n="82"><div class="sec-head"><span class="sec-n">82</span><h2>Lab 6 — Authentication review</h2></div><p>Test your own vulnerable app against pointed questions.</p><ul class="bul"><li>Can authentication be bypassed?</li><li>Are sessions handled securely?</li><li>Do tokens expire?</li><li>Does logout invalidate the session?</li><li>Are credentials protected?</li><li>Does the backend enforce authentication?</li></ul></section>
+<section class="sec" id="s83" data-n="83"><div class="sec-head"><span class="sec-n">83</span><h2>Lab 7 — Authorization review</h2></div><p>Create two accounts and prove the boundary between them holds. This is a safe, high-value way to find authorization flaws.</p><figure class="dia"><figcaption>The check</figcaption><pre>Account A -&gt; A&#x27;s resources = allowed
+Account A -&gt; B&#x27;s resources = denied</pre></figure></section>
+<section class="sec" id="s84" data-n="84"><div class="sec-head"><span class="sec-n">84</span><h2>Lab 8 — Component security</h2></div><p>For every Activity, Service, Receiver, and Provider, run the same interrogation.</p><ul class="bul"><li>Is it exported?</li><li>Why is it exported?</li><li>Does it require a permission?</li><li>Does it accept external input?</li><li>Does it perform a sensitive operation?</li></ul></section>
+<section class="sec" id="s85" data-n="85"><div class="sec-head"><span class="sec-n">85</span><h2>Lab 9 — WebView security</h2></div><p>Using a deliberately vulnerable training app, study URL loading, JavaScript, navigation, JavaScript bridges, local vs external content, and TLS behavior.</p><p>The goal is to feel why untrusted web content must never receive unnecessary native privileges.</p></section>
+<section class="sec" id="s86" data-n="86"><div class="sec-head"><span class="sec-n">86</span><h2>Lab 10 — Reverse engineering</h2></div><p>Read the app at two levels. Start high with decompiled Java, then drop lower to smali and resources.</p><figure class="dia"><figcaption>Two passes</figcaption><pre>APK -&gt; JADX    -&gt; Java-like view    -&gt; understand logic
+APK -&gt; Apktool -&gt; Smali / resources -&gt; understand implementation</pre></figure><p>Do this only against intentionally vulnerable applications.</p></section>
+<section class="sec" id="s87" data-n="87"><div class="sec-head"><span class="sec-n">87</span><h2>Lab 11 — Runtime instrumentation</h2></div><p>Later, learn <code>Frida</code>. It lets a researcher observe and instrument application behavior at runtime.</p><figure class="dia"><figcaption>Instrumentation loop</figcaption><pre>Application
+      |
+   Runtime
+      ^
+    Frida
+      ^
+ Researcher</pre></figure><p>Use it on your own lab apps to understand runtime behavior — not to defeat protections on apps you do not own.</p></section>
+<section class="sec" id="s88" data-n="88"><div class="sec-head"><span class="sec-n">88</span><h2>Malware analysis lab</h2></div><p>For malware research, isolate everything.</p><figure class="dia"><figcaption>Isolation stack</figcaption><pre>Dedicated VM
+     |
+Isolated network
+     |
+Android emulator
+     |
+Sample
+     |
+Static analysis
+     |
+Dynamic observation</pre></figure><aside class="note warn"><div class="note-h">Never on production</div><div class="note-b">Never experiment with suspicious APKs on your primary phone, banking device, work phone, or any personal production environment.</div></aside></section>
+<section class="sec" id="s89" data-n="89"><div class="sec-head"><span class="sec-n">89</span><h2>Incident response</h2></div><p>If an Android device is suspected compromised, work in order and preserve evidence.</p><ol class="ord"><li>Disconnect from networks if appropriate.</li><li>Preserve evidence.</li><li>Avoid destroying logs or data unnecessarily.</li><li>Identify suspicious applications.</li><li>Review permissions.</li><li>Check for unusual account activity.</li><li>Review updates and security status.</li><li>Change credentials from a trusted device.</li><li>Consider professional forensics for serious incidents.</li></ol></section>
+<div class="part" id="part-14"><div class="part-rail"><span class="part-n">14</span></div><div class="part-txt"><h2>Building Secure</h2><p>Principles and the mistakes beginners make.</p></div></div>
+<section class="sec" id="s90" data-n="90"><div class="sec-head"><span class="sec-n">90</span><h2>Secure development principles</h2></div><p>When you build apps yourself, hold to these ten.</p><ol class="ord"><li>Minimize permissions.</li><li>Don't hardcode secrets.</li><li>Use secure cryptographic APIs.</li><li>Protect sensitive data.</li><li>Validate all external input.</li><li>Use HTTPS / TLS correctly.</li><li>Enforce authorization server-side.</li><li>Don't expose components unnecessarily.</li><li>Avoid sensitive logging.</li><li>Keep dependencies updated.</li></ol></section>
+<section class="sec" id="s91" data-n="91"><div class="sec-head"><span class="sec-n">91</span><h2>Common beginner mistakes</h2></div><ul class="bul"><li>Thinking Android hacking equals APK modification — it is far broader.</li><li>Learning only tools — tools are secondary to understanding the OS, architecture, security model, and attack surface.</li><li>Ignoring backend security — mobile apps are usually clients of a backend that must be tested too.</li><li>Testing only the UI — real testing covers UI, IPC, storage, network, API, runtime, native code, and OS interaction.</li><li>Using random malware APKs — dangerous and unnecessary; use controlled vulnerable labs.</li></ul><figure class="dia"><figcaption>Order of learning</figcaption><pre>Operating system
+        |
+Architecture
+        |
+Security model
+        |
+Attack surface
+        |
+Tool</pre></figure></section>
+<div class="part" id="part-15"><div class="part-rail"><span class="part-n">15</span></div><div class="part-txt"><h2>Master Map</h2><p>The full syllabus and the one mental model that matters.</p></div></div>
+<section class="sec" id="s92" data-n="92"><div class="sec-head"><span class="sec-n">92</span><h2>The complete learning map</h2></div><p>Keep this as your master roadmap — the whole territory on one page.</p><figure class="dia"><figcaption>Android security syllabus</figcaption><pre>ANDROID SECURITY
+|
++-- 01 Linux Fundamentals
++-- 02 Android Fundamentals
++-- 03 AOSP
++-- 04 Android Architecture
+|     +-- Kernel  +-- HAL  +-- ART
+|     +-- Framework  +-- Native Libraries
++-- 05 Android Internals
+|     +-- Zygote  +-- Binder
+|     +-- System Services  +-- IPC
++-- 06 Android Security
+|     +-- Sandbox  +-- UID/GID  +-- Permissions
+|     +-- SELinux  +-- Keystore  +-- Verified Boot
++-- 07 APK Internals
+|     +-- Manifest  +-- DEX  +-- Resources
+|     +-- Smali  +-- Native Libraries
++-- 08 ADB
++-- 09 Static Analysis  (JADX / Apktool / MobSF)
++-- 10 Dynamic Analysis (Debugging / Frida / Runtime)
++-- 11 Network Security (HTTP/HTTPS/TLS/Certs/APIs)
++-- 12 Authentication
++-- 13 Authorization
++-- 14 Data Storage
++-- 15 Cryptography
++-- 16 WebView
++-- 17 Deep Links
++-- 18 IPC Security
++-- 19 Native / JNI Security
++-- 20 Malware Analysis
++-- 21 Privacy
++-- 22 Vulnerability Assessment
++-- 23 Exploit Understanding
++-- 24 Remediation
++-- 25 Reporting
++-- 26 Advanced Internals
+      +-- Kernel  +-- SELinux  +-- Binder
+      +-- ART  +-- AOSP  +-- Native exploitation</pre></figure></section>
+<section class="sec" id="s93" data-n="93"><div class="sec-head"><span class="sec-n">93</span><h2>The one mental model</h2></div><p>Don't memorize Android hacking as a list of commands. Think in <code>trust boundaries</code>.</p><figure class="dia"><figcaption>Trust boundaries, top to bottom</figcaption><pre>             UNTRUSTED
+                 |
+                 v
+        +-----------------+
+        | Android App     |
+        +--------+--------+
+                 |  Permissions
+                 v
+        +-----------------+
+        | Android         |
+        | Framework       |
+        +--------+--------+
+                 |  IPC
+                 v
+        +-----------------+
+        | System Services |
+        +--------+--------+
+                 |
+                 v
+        +-----------------+
+        | Native / HAL    |
+        +--------+--------+
+                 |
+                 v
+        +-----------------+
+        | Linux Kernel    |
+        +--------+--------+
+                 |
+                 v
+             HARDWARE</pre></figure><p>At every boundary, ask the same five questions:</p><ul class="bul"><li>Who is allowed to communicate here?</li><li>What data can cross this boundary?</li><li>What privilege does the caller have?</li><li>Is the input trusted?</li><li>What happens if the caller is malicious?</li></ul><aside class="note key"><div class="note-h">This is the whole discipline</div><div class="note-b">That mindset is worth more than hundreds of memorized commands. Tools change; trust boundaries don't.</div></aside></section>
+  </div>
+
+  <footer class="foot">
+    <div class="foot-line"></div>
+    <p><strong>Understand &rarr; Identify &rarr; Validate safely &rarr; Document &rarr; Fix &rarr; Retest.</strong></p>
+    <p class="foot-sub">Study manual for authorized testing only. Test only systems you own or are explicitly permitted to assess.</p>
+  </footer>
+</main>
+
+<a href="#top" class="totop" id="totop" aria-label="Back to top">
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M6 11l6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</a>
+
+<script>
+/* Android Security Field Manual — interactions. Vanilla JS, no deps. */
+(function () {
+  "use strict";
+  var doc = document, root = doc.documentElement;
+  var $ = function (s, c) { return (c || doc).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || doc).querySelectorAll(s)); };
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+  /* ---------- theme: dark / light / auto, persisted ---------- */
+  var THEMES = ["auto", "dark", "light"];
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function applyTheme(t) {
+    if (t === "auto") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", t);
+  }
+  var theme = load("asfm-theme");
+  if (THEMES.indexOf(theme) === -1) theme = "auto";
+  applyTheme(theme);
+  var themeBtn = $("#theme-btn");
+  if (themeBtn) {
+    var titles = { auto: "Theme: auto (system)", dark: "Theme: dark", light: "Theme: light" };
+    themeBtn.title = titles[theme];
+    themeBtn.addEventListener("click", function () {
+      theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+      applyTheme(theme); store("asfm-theme", theme);
+      themeBtn.title = titles[theme];
+    });
+  }
+
+  /* ---------- mobile sidebar ---------- */
+  var side = $("#side"), scrim = $("#scrim"), menu = $("#menu-btn");
+  function openNav() { if (side) side.classList.add("open"); if (scrim) scrim.classList.add("show"); }
+  function closeNav() { if (side) side.classList.remove("open"); if (scrim) scrim.classList.remove("show"); }
+  if (menu) menu.addEventListener("click", openNav);
+  if (scrim) scrim.addEventListener("click", closeNav);
+  if (side) side.addEventListener("click", function (e) {
+    if (e.target.closest("a") && matchMedia("(max-width:960px)").matches) closeNav();
+  });
+  doc.addEventListener("keydown", function (e) { if (e.key === "Escape") closeNav(); });
+
+  /* ---------- search / filter ---------- */
+  var search = $("#search"), noHits = $("#no-hits");
+  var parts = $$(".nav-part"), links = $$(".nav-a");
+  function norm(s) { return s.toLowerCase(); }
+  if (search) {
+    search.addEventListener("input", function () {
+      var q = norm(search.value.trim()); var any = false;
+      parts.forEach(function (p) {
+        var subHit = false;
+        $$(".nav-a", p).forEach(function (a) {
+          var hit = !q || norm(a.textContent).indexOf(q) !== -1;
+          a.classList.toggle("hide", !hit);
+          if (hit) subHit = true;
+        });
+        var head = $(".nav-part-a", p);
+        var headHit = !q || (head && norm(head.textContent).indexOf(q) !== -1);
+        if (headHit) $$(".nav-a", p).forEach(function (a) { a.classList.remove("hide"); });
+        var show = subHit || headHit;
+        p.classList.toggle("hide", !show);
+        if (show) any = true;
+      });
+      if (noHits) noHits.classList.toggle("show", !any);
+    });
+  }
+
+  /* ---------- reading progress ---------- */
+  var bar = $("#progress-bar");
+  function progress() {
+    if (!bar) return;
+    var h = root.scrollHeight - root.clientHeight;
+    bar.style.width = (h > 0 ? (root.scrollTop || doc.body.scrollTop) / h * 100 : 0) + "%";
+  }
+
+  /* ---------- back to top ---------- */
+  var totop = $("#totop");
+  function toggleTop() { if (totop) totop.classList.toggle("show", (root.scrollTop || doc.body.scrollTop) > 600); }
+  if (totop) totop.addEventListener("click", function (e) {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+  });
+
+  var ticking = false;
+  window.addEventListener("scroll", function () {
+    if (ticking) return; ticking = true;
+    window.requestAnimationFrame(function () { progress(); toggleTop(); ticking = false; });
+  }, { passive: true });
+  progress(); toggleTop();
+
+  /* ---------- active section via IntersectionObserver ---------- */
+  var byTarget = {};
+  links.forEach(function (a) { byTarget[a.getAttribute("data-target")] = a; });
+  var secs = $$(".sec");
+  function setActive(id) {
+    links.forEach(function (a) { a.classList.remove("active"); });
+    parts.forEach(function (p) { p.classList.remove("on"); });
+    var a = byTarget[id];
+    if (!a) return;
+    a.classList.add("active");
+    var part = a.closest(".nav-part"); if (part) part.classList.add("on");
+    if (a.scrollIntoView && side && matchMedia("(min-width:961px)").matches) {
+      var r = a.getBoundingClientRect();
+      if (r.top < 90 || r.bottom > window.innerHeight - 40) a.scrollIntoView({ block: "center" });
+    }
+  }
+  if ("IntersectionObserver" in window && secs.length) {
+    var seen = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { seen[en.target.id] = en.isIntersecting ? en.intersectionRatio : 0; });
+      var best = null, bestR = 0;
+      Object.keys(seen).forEach(function (id) { if (seen[id] > bestR) { bestR = seen[id]; best = id; } });
+      if (best) setActive(best);
+    }, { rootMargin: "-15% 0px -70% 0px", threshold: [0, 0.25, 0.5, 1] });
+    secs.forEach(function (s) { io.observe(s); });
+  }
+})();
+
+</script>
+</body>
+</html>
